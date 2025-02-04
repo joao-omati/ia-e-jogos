@@ -1,97 +1,132 @@
 import tkinter as tk
 from tkinter import messagebox
 
-def check_winner(board, player):
-    for row in board:
-        if all(cell == player for cell in row):
+# Cores e estilos
+tema_fundo = "#2C3E50"
+tema_texto = "#ECF0F1"
+tema_botao_fundo = "#34495E"
+tema_x_cor = "#E74C3C"
+tema_o_cor = "#3498DB"
+
+def verificar_vencedor(tabuleiro, jogador):
+    for linha in tabuleiro:
+        if all(celula == jogador for celula in linha):
             return True
     
-    for col in range(3):
-        if all(board[row][col] == player for row in range(3)):
+    for coluna in range(3):
+        if all(tabuleiro[linha][coluna] == jogador for linha in range(3)):
             return True
     
-    if all(board[i][i] == player for i in range(3)) or all(board[i][2 - i] == player for i in range(3)):
+    if all(tabuleiro[i][i] == jogador for i in range(3)) or all(tabuleiro[i][2 - i] == jogador for i in range(3)):
         return True
     
     return False
 
-def available_moves(board):
-    return [(r, c) for r in range(3) for c in range(3) if board[r][c] == " "]
+def movimentos_disponiveis(tabuleiro):
+    return [(r, c) for r in range(3) for c in range(3) if tabuleiro[r][c] == " "]
 
-def minimax(board, depth, is_maximizing):
-    if check_winner(board, "O"):
+def minimax(tabuleiro, maximizando):
+    if verificar_vencedor(tabuleiro, "O"):
         return 1
-    if check_winner(board, "X"):
+    if verificar_vencedor(tabuleiro, "X"):
         return -1
-    if not available_moves(board):
+    if not movimentos_disponiveis(tabuleiro):
         return 0
     
-    if is_maximizing:
-        best_score = -float("inf")
-        for (r, c) in available_moves(board):
-            board[r][c] = "O"
-            score = minimax(board, depth + 1, False)
-            board[r][c] = " "
-            best_score = max(score, best_score)
-        return best_score
+    if maximizando:
+        melhor_pontuacao = -float("inf")
+        for (r, c) in movimentos_disponiveis(tabuleiro):
+            tabuleiro[r][c] = "O"
+            pontuacao = minimax(tabuleiro, False)
+            tabuleiro[r][c] = " "
+            melhor_pontuacao = max(pontuacao, melhor_pontuacao)
+        return melhor_pontuacao
     else:
-        best_score = float("inf")
-        for (r, c) in available_moves(board):
-            board[r][c] = "X"
-            score = minimax(board, depth + 1, True)
-            board[r][c] = " "
-            best_score = min(score, best_score)
-        return best_score
+        melhor_pontuacao = float("inf")
+        for (r, c) in movimentos_disponiveis(tabuleiro):
+            tabuleiro[r][c] = "X"
+            pontuacao = minimax(tabuleiro, True)
+            tabuleiro[r][c] = " "
+            melhor_pontuacao = min(pontuacao, melhor_pontuacao)
+        return melhor_pontuacao
 
-def best_move(board):
-    best_score = -float("inf")
-    move = None
-    for (r, c) in available_moves(board):
-        board[r][c] = "O"
-        score = minimax(board, 0, False)
-        board[r][c] = " "
-        if score > best_score:
-            best_score = score
-            move = (r, c)
-    return move
+def melhor_movimento(tabuleiro):
+    melhor_pontuacao = -float("inf")
+    movimento = None
+    for (r, c) in movimentos_disponiveis(tabuleiro):
+        tabuleiro[r][c] = "O"
+        pontuacao = minimax(tabuleiro, False)
+        tabuleiro[r][c] = " "
+        if pontuacao > melhor_pontuacao:
+            melhor_pontuacao = pontuacao
+            movimento = (r, c)
+    return movimento
 
-def on_click(r, c):
-    if board[r][c] == " " and not check_winner(board, "X") and not check_winner(board, "O"):
-        board[r][c] = "X"
-        buttons[r][c].config(text="X")
-        if check_winner(board, "X"):
+def ao_clicar(r, c):
+    if tabuleiro[r][c] == " " and not verificar_vencedor(tabuleiro, "X") and not verificar_vencedor(tabuleiro, "O"):
+        tabuleiro[r][c] = "X"
+        botoes[r][c].config(text="X", fg=tema_x_cor)
+        
+        if verificar_vencedor(tabuleiro, "X"):
             messagebox.showinfo("Jogo da Velha", "Você venceu!")
+            janela.destroy()  # Fecha a janela
             return
-        if not available_moves(board):
+        
+        if not movimentos_disponiveis(tabuleiro):
             messagebox.showinfo("Jogo da Velha", "Empate!")
+            janela.destroy()  # Fecha a janela
             return
         
-        move = best_move(board)
-        if move:
-            board[move[0]][move[1]] = "O"
-            buttons[move[0]][move[1]].config(text="O")
+        movimento = melhor_movimento(tabuleiro)
+        if movimento:
+            tabuleiro[movimento[0]][movimento[1]] = "O"
+            botoes[movimento[0]][movimento[1]].config(text="O", fg=tema_o_cor)
         
-        if check_winner(board, "O"):
+        if verificar_vencedor(tabuleiro, "O"):
             messagebox.showinfo("Jogo da Velha", "A IA venceu!")
-        elif not available_moves(board):
+            janela.destroy()  # Fecha a janela
+        elif not movimentos_disponiveis(tabuleiro):
             messagebox.showinfo("Jogo da Velha", "Empate!")
+            janela.destroy()  # Fecha a janela
 
-def reset_game():
-    global board
-    board = [[" " for _ in range(3)] for _ in range(3)]
+def reiniciar_jogo():
+    global tabuleiro
+    tabuleiro = [[" " for _ in range(3)] for _ in range(3)]
     for r in range(3):
         for c in range(3):
-            buttons[r][c].config(text=" ")
+            botoes[r][c].config(text=" ", bg=tema_botao_fundo)
 
-root = tk.Tk()
-root.title("Jogo da Velha")
-board = [[" " for _ in range(3)] for _ in range(3)]
-buttons = [[None for _ in range(3)] for _ in range(3)]
+# Configuração da Janela
+janela = tk.Tk()
+janela.title("Jogo da Velha")
+janela.configure(bg=tema_fundo)
+janela.resizable(False, False)
+
+# Centralizar a janela
+largura_janela = 400
+altura_janela = 350
+largura_tela = janela.winfo_screenwidth()
+altura_tela = janela.winfo_screenheight()
+x = (largura_tela // 2) - (largura_janela // 2)
+y = (altura_tela // 2) - (altura_janela // 2)
+janela.geometry(f"{largura_janela}x{altura_janela}+{x}+{y}")
+
+tabuleiro = [[" " for _ in range(3)] for _ in range(3)]
+botoes = [[None for _ in range(3)] for _ in range(3)]
+
+quadro = tk.Frame(janela, bg=tema_fundo)
+quadro.pack(pady=20)
 
 for r in range(3):
     for c in range(3):
-        buttons[r][c] = tk.Button(root, text=" ", font=("Arial", 24), width=5, height=2, command=lambda r=r, c=c: on_click(r, c))
-        buttons[r][c].grid(row=r, column=c)
+        botoes[r][c] = tk.Button(quadro, text=" ", font=("Arial", 20, "bold"), width=5, height=2, 
+                                  bg=tema_botao_fundo, fg=tema_texto, relief=tk.RIDGE,
+                                  command=lambda r=r, c=c: ao_clicar(r, c))
+        botoes[r][c].grid(row=r, column=c, padx=5, pady=5)
 
-tk.Button(root, text="Reiniciar", font=("Arial", 14), command=reset_game).grid(row=3, column=0, columnspan=3)
-root.mainloop()
+botao_reiniciar = tk.Button(janela, text="Reiniciar", font=("Arial", 14, "bold"), 
+                             bg=tema_x_cor, fg=tema_texto, 
+                             command=reiniciar_jogo, relief=tk.RAISED)
+botao_reiniciar.pack(pady=10)
+
+janela.mainloop()
