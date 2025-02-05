@@ -1,85 +1,78 @@
-import tkinter as tk
+class Checkers:
+    def __init__(self):
+        self.board = []
+        self.create_board()
+        self.current_player = 'X'
 
-# Cores do tabuleiro
-tema_fundo = "#DDB88C"
-tema_claro = "#FFFACD"
-tema_escuro = "#8B4513"
-tema_p1 = "#000000"
-tema_p2 = "#FFFFFF"
+    def create_board(self):
+        for row in range(8):
+            self.board.append([])
+            for col in range(8):
+                if (row + col) % 2 == 0:
+                    if row < 3:
+                        self.board[row].append('X')
+                    elif row > 4:
+                        self.board[row].append('O')
+                    else:
+                        self.board[row].append(' ')
+                else:
+                    self.board[row].append(' ')
 
-dimensao = 8  # Tabuleiro 8x8
-tamanho_celula = 60
+    def print_board(self):
+        print("  0 1 2 3 4 5 6 7")
+        for i, row in enumerate(self.board):
+            print(i, end=" ")
+            for cell in row:
+                print(cell, end=" ")
+            print()
 
-class Damas:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Jogo de Damas")
-        self.canvas = tk.Canvas(root, width=dimensao * tamanho_celula, height=dimensao * tamanho_celula)
-        self.canvas.pack()
-        self.tabuleiro = [[None for _ in range(dimensao)] for _ in range(dimensao)]
-        self.jogador_atual = "P1"  # Começa com o jogador 1
-        self.selecionado = None
-        self.desenhar_tabuleiro()
-        self.posicionar_pecas()
-        self.canvas.bind("<Button-1>", self.clique)
-    
-    def desenhar_tabuleiro(self):
-        for linha in range(dimensao):
-            for coluna in range(dimensao):
-                cor = tema_claro if (linha + coluna) % 2 == 0 else tema_escuro
-                self.canvas.create_rectangle(
-                    coluna * tamanho_celula, linha * tamanho_celula,
-                    (coluna + 1) * tamanho_celula, (linha + 1) * tamanho_celula,
-                    fill=cor
-                )
-    
-    def posicionar_pecas(self):
-        for linha in range(dimensao):
-            for coluna in range(dimensao):
-                if (linha + coluna) % 2 == 1:
-                    if linha < 3:
-                        self.tabuleiro[linha][coluna] = "P2"
-                        self.desenhar_peca(linha, coluna, tema_p2)
-                    elif linha > 4:
-                        self.tabuleiro[linha][coluna] = "P1"
-                        self.desenhar_peca(linha, coluna, tema_p1)
-    
-    def desenhar_peca(self, linha, coluna, cor):
-        x1 = coluna * tamanho_celula + 10
-        y1 = linha * tamanho_celula + 10
-        x2 = (coluna + 1) * tamanho_celula - 10
-        y2 = (linha + 1) * tamanho_celula - 10
-        self.canvas.create_oval(x1, y1, x2, y2, fill=cor, tags=f"peca_{linha}_{coluna}")
-    
-    def clique(self, event):
-        coluna = event.x // tamanho_celula
-        linha = event.y // tamanho_celula
-        if self.selecionado:
-            self.mover_peca(linha, coluna)
-        elif self.tabuleiro[linha][coluna] == self.jogador_atual:
-            self.selecionado = (linha, coluna)
-    
-    def mover_peca(self, linha, coluna):
-        linha_antiga, coluna_antiga = self.selecionado
-        if abs(linha - linha_antiga) == 1 and abs(coluna - coluna_antiga) == 1:
-            if self.tabuleiro[linha][coluna] is None:
-                self.tabuleiro[linha][coluna] = self.jogador_atual
-                self.tabuleiro[linha_antiga][coluna_antiga] = None
-                self.atualizar_tabuleiro()
-                self.jogador_atual = "P2" if self.jogador_atual == "P1" else "P1"
-        self.selecionado = None
-    
-    def atualizar_tabuleiro(self):
-        self.canvas.delete("all")
-        self.desenhar_tabuleiro()
-        for linha in range(dimensao):
-            for coluna in range(dimensao):
-                if self.tabuleiro[linha][coluna] == "P1":
-                    self.desenhar_peca(linha, coluna, tema_p1)
-                elif self.tabuleiro[linha][coluna] == "P2":
-                    self.desenhar_peca(linha, coluna, tema_p2)
+    def is_valid_move(self, start, end):
+        start_row, start_col = start
+        end_row, end_col = end
+
+        if not (0 <= start_row < 8 and 0 <= start_col < 8 and 0 <= end_row < 8 and 0 <= end_col < 8):
+            return False
+
+        if self.board[end_row][end_col] != ' ':
+            return False
+
+        if self.current_player == 'X':
+            if self.board[start_row][start_col] != 'X':
+                return False
+            if end_row != start_row + 1 or abs(end_col - start_col) != 1:
+                return False
+        else:
+            if self.board[start_row][start_col] != 'O':
+                return False
+            if end_row != start_row - 1 or abs(end_col - start_col) != 1:
+                return False
+
+        return True
+
+    def make_move(self, start, end):
+        if self.is_valid_move(start, end):
+            start_row, start_col = start
+            end_row, end_col = end
+
+            self.board[end_row][end_col] = self.board[start_row][start_col]
+            self.board[start_row][start_col] = ' '
+
+            self.current_player = 'O' if self.current_player == 'X' else 'X'
+            return True
+        return False
+
+    def play(self):
+        while True:
+            self.print_board()
+            print(f"Vez do jogador {self.current_player}")
+            start = tuple(map(int, input("Digite a posição inicial (linha coluna): ").split()))
+            end = tuple(map(int, input("Digite a posição final (linha coluna): ").split()))
+
+            if self.make_move(start, end):
+                print("Movimento válido!")
+            else:
+                print("Movimento inválido! Tente novamente.")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    jogo = Damas(root)
-    root.mainloop()
+    game = Checkers()
+    game.play()
