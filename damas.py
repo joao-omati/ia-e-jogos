@@ -1,78 +1,78 @@
-class Checkers:
-    def __init__(self):
-        self.board = []
-        self.create_board()
-        self.current_player = 'X'
+import pygame
+import sys
 
-    def create_board(self):
-        for row in range(8):
-            self.board.append([])
-            for col in range(8):
-                if (row + col) % 2 == 0:
-                    if row < 3:
-                        self.board[row].append('X')
-                    elif row > 4:
-                        self.board[row].append('O')
-                    else:
-                        self.board[row].append(' ')
-                else:
-                    self.board[row].append(' ')
+# Definições de cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GRAY = (128, 128, 128)
 
-    def print_board(self):
-        print("  0 1 2 3 4 5 6 7")
-        for i, row in enumerate(self.board):
-            print(i, end=" ")
-            for cell in row:
-                print(cell, end=" ")
-            print()
+# Configurações do tabuleiro
+ROWS, COLS = 8, 8
+SQUARE_SIZE = 80
+WIDTH, HEIGHT = COLS * SQUARE_SIZE, ROWS * SQUARE_SIZE
 
-    def is_valid_move(self, start, end):
-        start_row, start_col = start
-        end_row, end_col = end
+# Inicializando pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jogo de Damas")
 
-        if not (0 <= start_row < 8 and 0 <= start_col < 8 and 0 <= end_row < 8 and 0 <= end_col < 8):
-            return False
+# Classe para representar as peças
+def draw_board():
+    for row in range(ROWS):
+        for col in range(COLS):
+            color = WHITE if (row + col) % 2 == 0 else BLACK
+            pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
 
-        if self.board[end_row][end_col] != ' ':
-            return False
+def draw_pieces(board):
+    for row in range(ROWS):
+        for col in range(COLS):
+            piece = board[row][col]
+            if piece == 1:
+                pygame.draw.circle(screen, RED, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
+            elif piece == 2:
+                pygame.draw.circle(screen, GRAY, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
 
-        if self.current_player == 'X':
-            if self.board[start_row][start_col] != 'X':
-                return False
-            if end_row != start_row + 1 or abs(end_col - start_col) != 1:
-                return False
-        else:
-            if self.board[start_row][start_col] != 'O':
-                return False
-            if end_row != start_row - 1 or abs(end_col - start_col) != 1:
-                return False
+def initialize_board():
+    board = [[0] * COLS for _ in range(ROWS)]
+    for row in range(3):
+        for col in range(COLS):
+            if (row + col) % 2 == 1:
+                board[row][col] = 1
+    for row in range(5, 8):
+        for col in range(COLS):
+            if (row + col) % 2 == 1:
+                board[row][col] = 2
+    return board
 
-        return True
+def get_square_from_mouse(pos):
+    x, y = pos
+    return y // SQUARE_SIZE, x // SQUARE_SIZE
 
-    def make_move(self, start, end):
-        if self.is_valid_move(start, end):
-            start_row, start_col = start
-            end_row, end_col = end
-
-            self.board[end_row][end_col] = self.board[start_row][start_col]
-            self.board[start_row][start_col] = ' '
-
-            self.current_player = 'O' if self.current_player == 'X' else 'X'
-            return True
-        return False
-
-    def play(self):
-        while True:
-            self.print_board()
-            print(f"Vez do jogador {self.current_player}")
-            start = tuple(map(int, input("Digite a posição inicial (linha coluna): ").split()))
-            end = tuple(map(int, input("Digite a posição final (linha coluna): ").split()))
-
-            if self.make_move(start, end):
-                print("Movimento válido!")
-            else:
-                print("Movimento inválido! Tente novamente.")
+def main():
+    board = initialize_board()
+    running = True
+    selected_piece = None
+    
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                row, col = get_square_from_mouse(event.pos)
+                if selected_piece:
+                    board[selected_piece[0]][selected_piece[1]] = 0
+                    board[row][col] = selected_piece[2]
+                    selected_piece = None
+                elif board[row][col] != 0:
+                    selected_piece = (row, col, board[row][col])
+        
+        draw_board()
+        draw_pieces(board)
+        pygame.display.flip()
+    
+    pygame.quit()
+    sys.exit()
 
 if __name__ == "__main__":
-    game = Checkers()
-    game.play()
+    main()
