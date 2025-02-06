@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-# Definições de cores
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -12,12 +12,10 @@ ROWS, COLS = 8, 8
 SQUARE_SIZE = 80
 WIDTH, HEIGHT = COLS * SQUARE_SIZE, ROWS * SQUARE_SIZE
 
-# Inicializando pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Jogo de Damas")
 
-# Classe para representar as peças
 def draw_board():
     for row in range(ROWS):
         for col in range(COLS):
@@ -48,7 +46,27 @@ def initialize_board():
 def get_square_from_mouse(pos):
     x, y = pos
     return y // SQUARE_SIZE, x // SQUARE_SIZE
-
+#andar na porra da diagonal
+def is_valid_move(board, start, end, player):
+    row, col = start
+    new_row, new_col = end
+    direction = 1 if player == 1 else -1
+    
+    if board[new_row][new_col] != 0:
+        return False
+    
+    if abs(new_row - row) == 1 and abs(new_col - col) == 1 and (new_row - row) == direction:
+        return True
+    
+    if abs(new_row - row) == 2 and abs(new_col - col) == 2:
+        mid_row = (row + new_row) // 2
+        mid_col = (col + new_col) // 2
+        if board[mid_row][mid_col] != 0 and board[mid_row][mid_col] != player:
+            board[mid_row][mid_col] = 0
+            return True
+    
+    return False
+#comer peça e tudo mais
 def main():
     board = initialize_board()
     running = True
@@ -61,8 +79,9 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 row, col = get_square_from_mouse(event.pos)
                 if selected_piece:
-                    board[selected_piece[0]][selected_piece[1]] = 0
-                    board[row][col] = selected_piece[2]
+                    if is_valid_move(board, selected_piece[:2], (row, col), selected_piece[2]):
+                        board[selected_piece[0]][selected_piece[1]] = 0
+                        board[row][col] = selected_piece[2]
                     selected_piece = None
                 elif board[row][col] != 0:
                     selected_piece = (row, col, board[row][col])
