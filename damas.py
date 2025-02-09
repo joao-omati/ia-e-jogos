@@ -7,6 +7,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GRAY = (128, 128, 128)
+GOLD = (255, 215, 0)
 
 # Configurações do tabuleiro
 ROWS, COLS = 8, 8
@@ -32,6 +33,10 @@ def draw_pieces(board):
                 pygame.draw.circle(screen, RED, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
             elif piece == 2:
                 pygame.draw.circle(screen, GRAY, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
+            elif piece == 3:
+                pygame.draw.circle(screen, GOLD, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
+            elif piece == 4:
+                pygame.draw.circle(screen, GOLD, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2 - 5)
 
 def initialize_board():
     board = [[0] * COLS for _ in range(ROWS)]
@@ -72,37 +77,62 @@ def is_valid_move(board, start, end, player):
     
     return False
 
+def promote_to_king(board, row, col, player):
+    if (player == 1 and row == ROWS - 1) or (player == 2 and row == 0):
+        board[row][col] = 3 if player == 1 else 4
+
 def get_valid_moves(board, player):
     moves = []
     for row in range(ROWS):
         for col in range(COLS):
-            if board[row][col] == player:
+            if board[row][col] == player or board[row][col] == player + 2:
                 for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
                     new_row, new_col = row + dr, col + dc
                     if is_valid_move(board, (row, col), (new_row, new_col), player):
                         moves.append(((row, col), (new_row, new_col)))
     return moves
 
+def evaluate_board(board):
+    # Função de avaliação simples: conta as peças do jogador 2 e subtrai as peças do jogador 1
+    player1_pieces = 0
+    player2_pieces = 0
+    for row in range(ROWS):
+        for col in range(COLS):
+            if board[row][col] == 1 or board[row][col] == 3:
+                player1_pieces += 1
+            elif board[row][col] == 2 or board[row][col] == 4:
+                player2_pieces += 1
+    return player2_pieces - player1_pieces
+
 def minimax(board, depth, maximizing_player):
-    if depth == 0 or not get_valid_moves(board, 2 if maximizing_player else 1):
-        return None, random.choice(get_valid_moves(board, 2)) if maximizing_player else None
+    valid_moves = get_valid_moves(board, 2 if maximizing_player else 1)
+    if depth == 0 or not valid_moves:
+        return evaluate_board(board), None  # Retorna a avaliação do tabuleiro
     
-    best_move = None
     if maximizing_player:
-        for move in get_valid_moves(board, 2):
+        max_eval = -float('inf')
+        best_move = None
+        for move in valid_moves:
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 2
-            _, _ = minimax(new_board, depth - 1, False)
-            best_move = move if best_move is None else best_move
+            eval, _ = minimax(new_board, depth - 1, False)
+            if eval > max_eval:
+                max_eval = eval
+                best_move = move
+        return max_eval, best_move
     else:
-        for move in get_valid_moves(board, 1):
+        min_eval = float('inf')
+        best_move = None
+        for move in valid_moves:
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 1
-            _, _ = minimax(new_board, depth - 1, True)
-            best_move = move if best_move is None else best_move
-    return None, best_move
+            eval, _ = minimax(new_board, depth - 1, True)
+            if eval < min_eval:
+                min_eval = eval
+                best_move = move
+        return min_eval, best_move
 
 def main():
     board = initialize_board()
@@ -120,6 +150,7 @@ def main():
                     if is_valid_move(board, selected_piece[:2], (row, col), selected_piece[2]):
                         board[selected_piece[0]][selected_piece[1]] = 0
                         board[row][col] = selected_piece[2]
+                        promote_to_king(board, row, col, selected_piece[2])
                         player_turn = 2
                     selected_piece = None
                 elif board[row][col] == 1:
@@ -130,6 +161,7 @@ def main():
             if ai_move:
                 board[ai_move[0][0]][ai_move[0][1]] = 0
                 board[ai_move[1][0]][ai_move[1][1]] = 2
+                promote_to_king(board, ai_move[1][0], ai_move[1][1], 2)
             player_turn = 1
         
         draw_board()
