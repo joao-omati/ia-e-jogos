@@ -54,6 +54,9 @@ def is_valid_move(board, start, end, player):
     new_row, new_col = end
     direction = 1 if player == 1 else -1
     
+    if not (0 <= new_row < ROWS and 0 <= new_col < COLS):
+        return False
+    
     if board[new_row][new_col] != 0:
         return False
     
@@ -74,37 +77,31 @@ def get_valid_moves(board, player):
     for row in range(ROWS):
         for col in range(COLS):
             if board[row][col] == player:
-                for dr in [-1, 1]:
-                    for dc in [-1, 1]:
-                        new_row, new_col = row + dr, col + dc
-                        if 0 <= new_row < ROWS and 0 <= new_col < COLS:
-                            if is_valid_move(board, (row, col), (new_row, new_col), player):
-                                moves.append(((row, col), (new_row, new_col)))
+                for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                    new_row, new_col = row + dr, col + dc
+                    if is_valid_move(board, (row, col), (new_row, new_col), player):
+                        moves.append(((row, col), (new_row, new_col)))
     return moves
 
 def minimax(board, depth, maximizing_player):
-    if depth == 0:
-        return None, random.choice(get_valid_moves(board, 2))
+    if depth == 0 or not get_valid_moves(board, 2 if maximizing_player else 1):
+        return None, random.choice(get_valid_moves(board, 2)) if maximizing_player else None
     
     best_move = None
     if maximizing_player:
-        best_score = float('-inf')
         for move in get_valid_moves(board, 2):
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 2
             _, _ = minimax(new_board, depth - 1, False)
-            if best_move is None:
-                best_move = move
+            best_move = move if best_move is None else best_move
     else:
-        best_score = float('inf')
         for move in get_valid_moves(board, 1):
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 1
             _, _ = minimax(new_board, depth - 1, True)
-            if best_move is None:
-                best_move = move
+            best_move = move if best_move is None else best_move
     return None, best_move
 
 def main():
