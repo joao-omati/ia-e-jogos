@@ -57,7 +57,7 @@ def get_square_from_mouse(pos):
 def is_valid_move(board, start, end, player):
     row, col = start
     new_row, new_col = end
-    direction = 1 if player == 1 else -1
+    piece = board[row][col]
     
     if not (0 <= new_row < ROWS and 0 <= new_col < COLS):
         return False
@@ -65,14 +65,31 @@ def is_valid_move(board, start, end, player):
     if board[new_row][new_col] != 0:
         return False
     
-    if abs(new_row - row) == 1 and abs(new_col - col) == 1 and (new_row - row) == direction:
-        return True
+    # Movimento para peças comuns
+    if piece == 1 or piece == 2:
+        direction = 1 if player == 1 else -1
+        if abs(new_row - row) == 1 and abs(new_col - col) == 1 and (new_row - row) == direction:
+            return True
+        
+        if abs(new_row - row) == 2 and abs(new_col - col) == 2:
+            mid_row = (row + new_row) // 2
+            mid_col = (col + new_col) // 2
+            if board[mid_row][mid_col] != 0 and board[mid_row][mid_col] != player:
+                board[mid_row][mid_col] = 0
+                return True
     
-    if abs(new_row - row) == 2 and abs(new_col - col) == 2:
-        mid_row = (row + new_row) // 2
-        mid_col = (col + new_col) // 2
-        if board[mid_row][mid_col] != 0 and board[mid_row][mid_col] != player:
-            board[mid_row][mid_col] = 0
+    # Movimento para damas
+    elif piece == 3 or piece == 4:
+        if abs(new_row - row) == abs(new_col - col):
+            # Verifica se o caminho está livre
+            step_row = 1 if new_row > row else -1
+            step_col = 1 if new_col > col else -1
+            current_row, current_col = row + step_row, col + step_col
+            while current_row != new_row and current_col != new_col:
+                if board[current_row][current_col] != 0:
+                    return False
+                current_row += step_row
+                current_col += step_col
             return True
     
     return False
@@ -86,10 +103,23 @@ def get_valid_moves(board, player):
     for row in range(ROWS):
         for col in range(COLS):
             if board[row][col] == player or board[row][col] == player + 2:
-                for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
-                    new_row, new_col = row + dr, col + dc
-                    if is_valid_move(board, (row, col), (new_row, new_col), player):
-                        moves.append(((row, col), (new_row, new_col)))
+                for dr in [-1, 1]:
+                    for dc in [-1, 1]:
+                        if board[row][col] == 3 or board[row][col] == 4:
+                            # Movimento para damas: múltiplas casas
+                            new_row, new_col = row + dr, col + dc
+                            while 0 <= new_row < ROWS and 0 <= new_col < COLS:
+                                if is_valid_move(board, (row, col), (new_row, new_col), player):
+                                    moves.append(((row, col), (new_row, new_col)))
+                                if board[new_row][new_col] != 0:
+                                    break
+                                new_row += dr
+                                new_col += dc
+                        else:
+                            # Movimento para peças comuns: uma casa ou captura
+                            new_row, new_col = row + dr, col + dc
+                            if is_valid_move(board, (row, col), (new_row, new_col), player):
+                                moves.append(((row, col), (new_row, new_col)))
     return moves
 
 def evaluate_board(board):
@@ -153,7 +183,7 @@ def main():
                         promote_to_king(board, row, col, selected_piece[2])
                         player_turn = 2
                     selected_piece = None
-                elif board[row][col] == 1:
+                elif board[row][col] == 1 or board[row][col] == 3:
                     selected_piece = (row, col, board[row][col])
         
         if player_turn == 2:
