@@ -75,7 +75,6 @@ def is_valid_move(board, start, end, player):
             mid_row = (row + new_row) // 2
             mid_col = (col + new_col) // 2
             if board[mid_row][mid_col] != 0 and board[mid_row][mid_col] != player:
-                board[mid_row][mid_col] = 0
                 return True
     
     # Movimento para damas
@@ -85,9 +84,12 @@ def is_valid_move(board, start, end, player):
             step_row = 1 if new_row > row else -1
             step_col = 1 if new_col > col else -1
             current_row, current_col = row + step_row, col + step_col
+            captured = False
             while current_row != new_row and current_col != new_col:
                 if board[current_row][current_col] != 0:
-                    return False
+                    if captured or board[current_row][current_col] == player or board[current_row][current_col] == player + 2:
+                        return False
+                    captured = True
                 current_row += step_row
                 current_col += step_col
             return True
@@ -100,6 +102,7 @@ def promote_to_king(board, row, col, player):
 
 def get_valid_moves(board, player):
     moves = []
+    capture_moves = []
     for row in range(ROWS):
         for col in range(COLS):
             if board[row][col] == player or board[row][col] == player + 2:
@@ -110,20 +113,27 @@ def get_valid_moves(board, player):
                             new_row, new_col = row + dr, col + dc
                             while 0 <= new_row < ROWS and 0 <= new_col < COLS:
                                 if is_valid_move(board, (row, col), (new_row, new_col), player):
-                                    moves.append(((row, col), (new_row, new_col)))
+                                    if abs(new_row - row) > 1 or abs(new_col - col) > 1:
+                                        capture_moves.append(((row, col), (new_row, new_col)))
+                                    else:
+                                        moves.append(((row, col), (new_row, new_col)))
                                 if board[new_row][new_col] != 0:
                                     break
                                 new_row += dr
                                 new_col += dc
                         else:
-                            # Movimento para peças comuns: uma casa ou captura
+                            # Movimento das normal: uma casa ou captura
                             new_row, new_col = row + dr, col + dc
                             if is_valid_move(board, (row, col), (new_row, new_col), player):
-                                moves.append(((row, col), (new_row, new_col)))
-    return moves
+                                if abs(new_row - row) > 1 or abs(new_col - col) > 1:
+                                    capture_moves.append(((row, col), (new_row, new_col)))
+                                else:
+                                    moves.append(((row, col), (new_row, new_col)))
+    # fazer a porra da ia sempre tentar capturar as peças
+    return capture_moves if capture_moves else moves
 
 def evaluate_board(board):
-    # Função de avaliação simples: conta as peças do jogador 2 e subtrai as peças do jogador 1
+    # vê se o jogo acabou ou não(sem isso essa porra nunca acaba)
     player1_pieces = 0
     player2_pieces = 0
     for row in range(ROWS):
@@ -137,7 +147,7 @@ def evaluate_board(board):
 def minimax(board, depth, maximizing_player):
     valid_moves = get_valid_moves(board, 2 if maximizing_player else 1)
     if depth == 0 or not valid_moves:
-        return evaluate_board(board), None  # Retorna a avaliação do tabuleiro
+        return evaluate_board(board), None  # responde se ainda tem jogo
     
     if maximizing_player:
         max_eval = -float('inf')
@@ -146,6 +156,11 @@ def minimax(board, depth, maximizing_player):
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 2
+            # remover a peça capturada
+            if abs(move[1][0] - move[0][0]) > 1 or abs(move[1][1] - move[0][1]) > 1:
+                mid_row = (move[0][0] + move[1][0]) // 2
+                mid_col = (move[0][1] + move[1][1]) // 2
+                new_board[mid_row][mid_col] = 0
             eval, _ = minimax(new_board, depth - 1, False)
             if eval > max_eval:
                 max_eval = eval
@@ -158,6 +173,11 @@ def minimax(board, depth, maximizing_player):
             new_board = [row[:] for row in board]
             new_board[move[0][0]][move[0][1]] = 0
             new_board[move[1][0]][move[1][1]] = 1
+            # remover a peça capturada do outro lado
+            if abs(move[1][0] - move[0][0]) > 1 or abs(move[1][1] - move[0][1]) > 1:
+                mid_row = (move[0][0] + move[1][0]) // 2
+                mid_col = (move[0][1] + move[1][1]) // 2
+                new_board[mid_row][mid_col] = 0
             eval, _ = minimax(new_board, depth - 1, True)
             if eval < min_eval:
                 min_eval = eval
@@ -180,6 +200,11 @@ def main():
                     if is_valid_move(board, selected_piece[:2], (row, col), selected_piece[2]):
                         board[selected_piece[0]][selected_piece[1]] = 0
                         board[row][col] = selected_piece[2]
+                        # Se for uma captura, remove a peça capturada
+                        if abs(row - selected_piece[0]) > 1 or abs(col - selected_piece[1]) > 1:
+                            mid_row = (selected_piece[0] + row) // 2
+                            mid_col = (selected_piece[1] + col) // 2
+                            board[mid_row][mid_col] = 0
                         promote_to_king(board, row, col, selected_piece[2])
                         player_turn = 2
                     selected_piece = None
@@ -191,6 +216,11 @@ def main():
             if ai_move:
                 board[ai_move[0][0]][ai_move[0][1]] = 0
                 board[ai_move[1][0]][ai_move[1][1]] = 2
+                # Se for uma captura, remove a peça capturada
+                if abs(ai_move[1][0] - ai_move[0][0]) > 1 or abs(ai_move[1][1] - ai_move[0][1]) > 1:
+                    mid_row = (ai_move[0][0] + ai_move[1][0]) // 2
+                    mid_col = (ai_move[0][1] + ai_move[1][1]) // 2
+                    board[mid_row][mid_col] = 0
                 promote_to_king(board, ai_move[1][0], ai_move[1][1], 2)
             player_turn = 1
         
