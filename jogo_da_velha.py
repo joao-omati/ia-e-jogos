@@ -69,12 +69,12 @@ def ao_clicar(r, c):
         
         if verificar_vencedor(tabuleiro, "X"):
             messagebox.showinfo("Jogo da Velha", "Você venceu!")
-            janela.destroy()  # Fecha a janela
+            janela.destroy()
             return
         
         if not movimentos_disponiveis(tabuleiro):
             messagebox.showinfo("Jogo da Velha", "Empate!")
-            janela.destroy()  # Fecha a janela
+            janela.destroy()
             return
         
         movimento = melhor_movimento(tabuleiro)
@@ -84,10 +84,10 @@ def ao_clicar(r, c):
         
         if verificar_vencedor(tabuleiro, "O"):
             messagebox.showinfo("Jogo da Velha", "A IA venceu!")
-            janela.destroy()  # Fecha a janela
+            janela.destroy()
         elif not movimentos_disponiveis(tabuleiro):
             messagebox.showinfo("Jogo da Velha", "Empate!")
-            janela.destroy()  # Fecha a janela
+            janela.destroy()
 
 def reiniciar_jogo():
     global tabuleiro
@@ -95,6 +95,14 @@ def reiniciar_jogo():
     for r in range(3):
         for c in range(3):
             botoes[r][c].config(text=" ", bg=tema_botao_fundo)
+
+def iniciar_jogo():
+    resposta = messagebox.askyesno("Quem começa?", "Você quer começar o jogo?")
+    if not resposta:
+        movimento = melhor_movimento(tabuleiro)
+        if movimento:
+            tabuleiro[movimento[0]][movimento[1]] = "O"
+            botoes[movimento[0]][movimento[1]].config(text="O", fg=tema_o_cor)
 
 # Configuração da Janela
 janela = tk.Tk()
@@ -111,6 +119,7 @@ x = (largura_tela // 2) - (largura_janela // 2)
 y = (altura_tela // 2) - (altura_janela // 2)
 janela.geometry(f"{largura_janela}x{altura_janela}+{x}+{y}")
 
+# Tabuleiro e Botões
 tabuleiro = [[" " for _ in range(3)] for _ in range(3)]
 botoes = [[None for _ in range(3)] for _ in range(3)]
 
@@ -129,4 +138,7 @@ botao_reiniciar = tk.Button(janela, text="Reiniciar", font=("Arial", 14, "bold")
                              command=reiniciar_jogo, relief=tk.RAISED)
 botao_reiniciar.pack(pady=10)
 
+# Início do jogo com pergunta
+iniciar_jogo()
 janela.mainloop()
+
