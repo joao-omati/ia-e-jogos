@@ -12,14 +12,11 @@ def verificar_vencedor(tabuleiro, jogador):
     for linha in tabuleiro:
         if all(celula == jogador for celula in linha):
             return True
-    
     for coluna in range(3):
         if all(tabuleiro[linha][coluna] == jogador for linha in range(3)):
             return True
-    
     if all(tabuleiro[i][i] == jogador for i in range(3)) or all(tabuleiro[i][2 - i] == jogador for i in range(3)):
         return True
-    
     return False
 
 def movimentos_disponiveis(tabuleiro):
@@ -32,7 +29,7 @@ def minimax(tabuleiro, maximizando):
         return -1
     if not movimentos_disponiveis(tabuleiro):
         return 0
-    
+
     if maximizando:
         melhor_pontuacao = -float("inf")
         for (r, c) in movimentos_disponiveis(tabuleiro):
@@ -66,28 +63,40 @@ def ao_clicar(r, c):
     if tabuleiro[r][c] == " " and not verificar_vencedor(tabuleiro, "X") and not verificar_vencedor(tabuleiro, "O"):
         tabuleiro[r][c] = "X"
         botoes[r][c].config(text="X", fg=tema_x_cor)
-        
+
         if verificar_vencedor(tabuleiro, "X"):
-            messagebox.showinfo("Jogo da Velha", "Você venceu!")
-            janela.destroy()
+            jogar_novamente = messagebox.askyesno("Jogo da Velha", "Você venceu!\nDeseja jogar novamente?")
+            if jogar_novamente:
+                reiniciar_jogo()
+            else:
+                janela.destroy()
             return
-        
+
         if not movimentos_disponiveis(tabuleiro):
-            messagebox.showinfo("Jogo da Velha", "Empate!")
-            janela.destroy()
+            jogar_novamente = messagebox.askyesno("Jogo da Velha", "Empate!\nDeseja jogar novamente?")
+            if jogar_novamente:
+                reiniciar_jogo()
+            else:
+                janela.destroy()
             return
-        
+
         movimento = melhor_movimento(tabuleiro)
         if movimento:
             tabuleiro[movimento[0]][movimento[1]] = "O"
             botoes[movimento[0]][movimento[1]].config(text="O", fg=tema_o_cor)
-        
+
         if verificar_vencedor(tabuleiro, "O"):
-            messagebox.showinfo("Jogo da Velha", "A IA venceu!")
-            janela.destroy()
+            jogar_novamente = messagebox.askyesno("Jogo da Velha", "A IA venceu!\nDeseja jogar novamente?")
+            if jogar_novamente:
+                reiniciar_jogo()
+            else:
+                janela.destroy()
         elif not movimentos_disponiveis(tabuleiro):
-            messagebox.showinfo("Jogo da Velha", "Empate!")
-            janela.destroy()
+            jogar_novamente = messagebox.askyesno("Jogo da Velha", "Empate!\nDeseja jogar novamente?")
+            if jogar_novamente:
+                reiniciar_jogo()
+            else:
+                janela.destroy()
 
 def reiniciar_jogo():
     global tabuleiro
@@ -95,6 +104,7 @@ def reiniciar_jogo():
     for r in range(3):
         for c in range(3):
             botoes[r][c].config(text=" ", bg=tema_botao_fundo)
+    iniciar_jogo()  # pergunta novamente quem começa
 
 def iniciar_jogo():
     resposta = messagebox.askyesno("Quem começa?", "Você quer começar o jogo?")
@@ -141,4 +151,5 @@ botao_reiniciar.pack(pady=10)
 # Início do jogo com pergunta
 iniciar_jogo()
 janela.mainloop()
+
 
