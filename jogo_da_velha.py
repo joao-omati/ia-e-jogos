@@ -6,7 +6,7 @@ tema_fundo = "#2C3E50"
 tema_texto = "#ECF0F1"
 tema_botao_fundo = "#34495E"
 tema_x_cor = "#E74C3C"
-tema_o_cor = "#3498DB"
+tema_o_cor = "#34DB7F"
 
 def verificar_vencedor(tabuleiro, jogador):
     for linha in tabuleiro:
